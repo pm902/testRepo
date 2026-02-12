@@ -58,36 +58,13 @@ class SmartSuiteClient:
                 missing.append(f"SS_FIELD_{name.upper()}")
         return missing
 
-    def create_record(self, product, doc_type, supplier, filename):
+    def upload_file(self, file_path, file_name):
         """
-        Create a new record in the SmartSuite Documents table.
+        Upload a file to SmartSuite and return the file reference.
 
-        Returns the record ID on success, or raises an exception on failure.
+        This must be called before creating a record when the document
+        field is required.
         """
-        url = f"{self.BASE_URL}/applications/{self.table_id}/records/"
-
-        payload = {
-            self.field_ids["product"]: product,
-            self.field_ids["type"]: doc_type,
-            self.field_ids["supplier"]: supplier,
-            self.field_ids["filename"]: filename,
-        }
-
-        response = requests.post(url, json=payload, headers=self._headers(), timeout=30)
-        response.raise_for_status()
-
-        data = response.json()
-        return data.get("id")
-
-    def upload_file(self, record_id, field_id, file_path, file_name):
-        """
-        Upload a file attachment to an existing SmartSuite record.
-
-        SmartSuite file upload is a two-step process:
-        1. Upload the file to get a file reference
-        2. Update the record to attach the file reference
-        """
-        # Step 1: Upload file
         upload_url = f"{self.BASE_URL}/files/"
         with open(file_path, "rb") as f:
             files = {"file": (file_name, f, "application/pdf")}
@@ -97,37 +74,55 @@ class SmartSuiteClient:
                 headers=self._file_headers(),
                 timeout=120,
             )
-        response.raise_for_status()
-        file_data = response.json()
+        if not response.ok:
+            detail = response.text[:500]
+            raise requests.HTTPError(
+                f"File upload {response.status_code}: {detail}", response=response
+            )
+        return response.json()
 
-        # Step 2: Attach file to record
-        record_url = (
-            f"{self.BASE_URL}/applications/{self.table_id}/records/{record_id}/"
-        )
+    def create_record(self, product, doc_type, supplier, filename, file_data):
+        """
+        Create a new record in the SmartSuite Documents table,
+        including the file attachment.
+
+        Returns the record ID on success, or raises an exception on failure.
+        """
+        url = f"{self.BASE_URL}/applications/{self.table_id}/records/"
+
         payload = {
-            field_id: [file_data],
+            "title": filename,
+            self.field_ids["product"]: product,
+            self.field_ids["type"]: doc_type,
+            self.field_ids["supplier"]: supplier,
+            self.field_ids["filename"]: filename,
+            self.field_ids["document"]: [file_data],
         }
-        response = requests.patch(
-            record_url, json=payload, headers=self._headers(), timeout=30
-        )
-        response.raise_for_status()
 
-        return file_data
+        response = requests.post(url, json=payload, headers=self._headers(), timeout=30)
+        if not response.ok:
+            detail = response.text[:500]
+            raise requests.HTTPError(
+                f"{response.status_code} for {url}: {detail}", response=response
+            )
+
+        data = response.json()
+        return data.get("id")
 
     def submit_document(self, product, doc_type, supplier, filename, file_path):
         """
-        Full intake submission: create record, then attach the PDF.
+        Full intake submission: upload the PDF, then create the record
+        with all fields including the file attachment.
 
         Returns dict with record_id and file info on success.
         Raises requests.HTTPError on API failure.
         """
-        record_id = self.create_record(product, doc_type, supplier, filename)
+        safe_name = filename if filename.lower().endswith(".pdf") else f"{filename}.pdf"
 
-        file_info = self.upload_file(
-            record_id=record_id,
-            field_id=self.field_ids["document"],
-            file_path=file_path,
-            file_name=filename if filename.lower().endswith(".pdf") else f"{filename}.pdf",
+        file_info = self.upload_file(file_path=file_path, file_name=safe_name)
+
+        record_id = self.create_record(
+            product, doc_type, supplier, filename, file_data=file_info
         )
 
         return {
