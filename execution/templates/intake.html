@@ -27,10 +27,9 @@
             gap: 1rem;
         }
 
-        header h1 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            letter-spacing: 0.02em;
+        header img.logo {
+            height: 40px;
+            width: auto;
         }
 
         header .subtitle {
@@ -230,7 +229,7 @@
 </head>
 <body>
     <header>
-        <h1>Lake International</h1>
+        <img src="{{ url_for('static', filename='LIlogo01.png') }}" alt="Lake International" class="logo">
         <span class="subtitle">Document Intake</span>
     </header>
 
