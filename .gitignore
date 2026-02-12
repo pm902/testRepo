@@ -7,3 +7,10 @@
 # Google OAuth credentials
 credentials.json
 token.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/

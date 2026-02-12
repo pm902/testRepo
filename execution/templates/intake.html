@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lake International — Document Intake</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f7fa;
+            color: #1a1a2e;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #1a1a2e;
+            color: #fff;
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        header h1 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        header .subtitle {
+            font-size: 0.85rem;
+            color: #a0aec0;
+            margin-left: auto;
+        }
+
+        .container {
+            max-width: 640px;
+            margin: 2.5rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+            padding: 2rem 2.25rem;
+        }
+
+        .card h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+            color: #1a1a2e;
+        }
+
+        .card .description {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 1.75rem;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 1.35rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #475569;
+            margin-bottom: 0.4rem;
+        }
+
+        label .required {
+            color: #e53e3e;
+            margin-left: 2px;
+        }
+
+        select,
+        input[type="text"] {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1.5px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            color: #1a1a2e;
+            background: #fff;
+            transition: border-color 0.15s ease;
+            appearance: none;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23475569' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            padding-right: 2rem;
+        }
+
+        select:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* File upload area */
+        .file-upload {
+            position: relative;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 1.75rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .file-upload:hover,
+        .file-upload.dragover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .file-upload.has-file {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-upload .upload-icon {
+            font-size: 2rem;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-upload .upload-text {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .file-upload .upload-text strong {
+            color: #3b82f6;
+        }
+
+        .file-upload .file-name {
+            font-size: 0.85rem;
+            color: #22c55e;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            word-break: break-all;
+        }
+
+        .file-upload .file-hint {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 0.35rem;
+        }
+
+        /* Submit button */
+        .submit-btn {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: #1a1a2e;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            margin-top: 0.75rem;
+        }
+
+        .submit-btn:hover {
+            background: #2d2d4a;
+        }
+
+        .submit-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* Flash messages */
+        .flash-messages {
+            margin-bottom: 1.25rem;
+        }
+
+        .flash {
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.45;
+        }
+
+        .flash.success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .flash.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Lake International</h1>
+        <span class="subtitle">Document Intake</span>
+    </header>
+
+    <div class="container">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <h2>Submit a Supplier Document</h2>
+            <p class="description">
+                Upload a supplier PDF and enter the required metadata. All fields are mandatory.
+            </p>
+
+            <form action="/submit" method="POST" enctype="multipart/form-data" id="intakeForm">
+                <!-- Product -->
+                <div class="form-group">
+                    <label for="product">Product <span class="required">*</span></label>
+                    <select name="product" id="product" required>
+                        <option value="" disabled selected>Select product...</option>
+                        {% for p in products %}
+                        <option value="{{ p }}">{{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Document Type -->
+                <div class="form-group">
+                    <label for="doc_type">Document Type <span class="required">*</span></label>
+                    <select name="doc_type" id="doc_type" required>
+                        <option value="" disabled selected>Select type...</option>
+                        {% for dt in doc_types %}
+                        <option value="{{ dt }}">{{ dt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Supplier -->
+                <div class="form-group">
+                    <label for="supplier">Supplier <span class="required">*</span></label>
+                    <select name="supplier" id="supplier" required>
+                        <option value="" disabled selected>Select supplier...</option>
+                        {% for s in suppliers %}
+                        <option value="{{ s }}">{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Filename -->
+                <div class="form-group">
+                    <label for="filename">Filename <span class="required">*</span></label>
+                    <input type="text" name="filename" id="filename" placeholder="e.g. LI-COA-Bevaloid-2026-001" required>
+                </div>
+
+                <!-- PDF Upload -->
+                <div class="form-group">
+                    <label>PDF Document <span class="required">*</span></label>
+                    <div class="file-upload" id="fileUploadArea">
+                        <input type="file" name="pdf_document" id="pdfDocument" accept=".pdf" required>
+                        <div class="upload-icon">&#128196;</div>
+                        <div class="upload-text">
+                            <strong>Click to upload</strong> or drag and drop
+                        </div>
+                        <div class="file-name" id="fileName" style="display:none;"></div>
+                        <div class="file-hint">PDF only, max 25 MB</div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="submit-btn" id="submitBtn">Submit Document</button>
+            </form>
+        </div>
+
+        <div class="footer">
+            Lake International &mdash; Document Intake System
+        </div>
+    </div>
+
+    <script>
+        // File upload visual feedback
+        const fileInput = document.getElementById("pdfDocument");
+        const uploadArea = document.getElementById("fileUploadArea");
+        const fileNameDisplay = document.getElementById("fileName");
+
+        fileInput.addEventListener("change", function () {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                if (!file.name.toLowerCase().endsWith(".pdf")) {
+                    alert("Only PDF files are accepted.");
+                    this.value = "";
+                    uploadArea.classList.remove("has-file");
+                    fileNameDisplay.style.display = "none";
+                    return;
+                }
+                fileNameDisplay.textContent = file.name;
+                fileNameDisplay.style.display = "block";
+                uploadArea.classList.add("has-file");
+            } else {
+                uploadArea.classList.remove("has-file");
+                fileNameDisplay.style.display = "none";
+            }
+        });
+
+        // Drag and drop visual
+        uploadArea.addEventListener("dragover", function (e) {
+            e.preventDefault();
+            this.classList.add("dragover");
+        });
+
+        uploadArea.addEventListener("dragleave", function () {
+            this.classList.remove("dragover");
+        });
+
+        uploadArea.addEventListener("drop", function () {
+            this.classList.remove("dragover");
+        });
+
+        // Prevent double-submit
+        document.getElementById("intakeForm").addEventListener("submit", function () {
+            var btn = document.getElementById("submitBtn");
+            btn.disabled = true;
+            btn.textContent = "Submitting...";
+        });
+    </script>
+</body>
+</html>
