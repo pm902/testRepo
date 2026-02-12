@@ -67,6 +67,7 @@ class SmartSuiteClient:
         url = f"{self.BASE_URL}/applications/{self.table_id}/records/"
 
         payload = {
+            "title": filename,
             self.field_ids["product"]: product,
             self.field_ids["type"]: doc_type,
             self.field_ids["supplier"]: supplier,
@@ -74,7 +75,11 @@ class SmartSuiteClient:
         }
 
         response = requests.post(url, json=payload, headers=self._headers(), timeout=30)
-        response.raise_for_status()
+        if not response.ok:
+            detail = response.text[:500]
+            raise requests.HTTPError(
+                f"{response.status_code} for {url}: {detail}", response=response
+            )
 
         data = response.json()
         return data.get("id")
@@ -97,7 +102,11 @@ class SmartSuiteClient:
                 headers=self._file_headers(),
                 timeout=120,
             )
-        response.raise_for_status()
+        if not response.ok:
+            detail = response.text[:500]
+            raise requests.HTTPError(
+                f"File upload {response.status_code}: {detail}", response=response
+            )
         file_data = response.json()
 
         # Step 2: Attach file to record
@@ -110,7 +119,11 @@ class SmartSuiteClient:
         response = requests.patch(
             record_url, json=payload, headers=self._headers(), timeout=30
         )
-        response.raise_for_status()
+        if not response.ok:
+            detail = response.text[:500]
+            raise requests.HTTPError(
+                f"File attach {response.status_code}: {detail}", response=response
+            )
 
         return file_data
 
