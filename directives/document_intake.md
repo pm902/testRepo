@@ -44,7 +44,7 @@ The SmartSuite field IDs must be configured in `.env` or discovered via the Smar
 - All fields are required — no submission without complete metadata.
 - If SmartSuite API fails, the error is displayed to the user with a clear message.
 - ACCURACY IS PARAMOUNT: no data is guessed or assumed. Every field must be explicitly provided by the user.
-- **SmartSuite document field is required on record creation.** Include it as `[]` (empty list) in the POST payload to satisfy the constraint. The actual file is then uploaded via the `recordfiles` endpoint: `POST /api/v1/recordfiles/{table_id}/{record_id}/{field_slug}/` using multipart/form-data with `files` (binary) and `filename` fields. There is no standalone `/files/` endpoint — that returns 404.
+- **SmartSuite document field is required on record creation.** The single-record endpoint (`POST /records/`) enforces this and rejects `[]`. Workaround: use the **bulk-add endpoint** (`POST /records/bulk/` with `{"items": [record]}`) which skips required-field validation. Then upload the file via `POST /api/v1/recordfiles/{table_id}/{record_id}/{field_slug}/` using multipart/form-data with `files` (binary) and `filename` fields. There is no standalone `/files/` endpoint — that returns 404.
 
 ## Running
 ```bash

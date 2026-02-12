@@ -62,22 +62,23 @@ class SmartSuiteClient:
         """
         Create a new record in the SmartSuite Documents table.
 
-        Includes the document field as an empty list to satisfy the
-        required-field constraint. The actual file is attached afterward
-        via the recordfiles endpoint.
+        Uses the bulk-add endpoint which bypasses required-field
+        validation, allowing us to omit the document field (file is
+        attached afterward via the recordfiles endpoint).
 
         Returns the record ID on success, or raises an exception on failure.
         """
-        url = f"{self.BASE_URL}/applications/{self.table_id}/records/"
+        url = f"{self.BASE_URL}/applications/{self.table_id}/records/bulk/"
 
-        payload = {
+        record = {
             "title": filename,
             self.field_ids["product"]: product,
             self.field_ids["type"]: doc_type,
             self.field_ids["supplier"]: supplier,
             self.field_ids["filename"]: filename,
-            self.field_ids["document"]: [],
         }
+
+        payload = {"items": [record]}
 
         response = requests.post(url, json=payload, headers=self._headers(), timeout=30)
         if not response.ok:
@@ -87,7 +88,7 @@ class SmartSuiteClient:
             )
 
         data = response.json()
-        return data.get("id")
+        return data[0].get("id")
 
     def upload_file(self, record_id, file_path, file_name):
         """
