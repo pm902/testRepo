@@ -58,33 +58,13 @@ class SmartSuiteClient:
                 missing.append(f"SS_FIELD_{name.upper()}")
         return missing
 
-    def upload_file(self, file_path, file_name):
+    def create_record(self, product, doc_type, supplier, filename):
         """
-        Upload a file to SmartSuite and return the file reference.
+        Create a new record in the SmartSuite Documents table.
 
-        This must be called before creating a record when the document
-        field is required.
-        """
-        upload_url = f"{self.BASE_URL}/files/"
-        with open(file_path, "rb") as f:
-            files = {"file": (file_name, f, "application/pdf")}
-            response = requests.post(
-                upload_url,
-                files=files,
-                headers=self._file_headers(),
-                timeout=120,
-            )
-        if not response.ok:
-            detail = response.text[:500]
-            raise requests.HTTPError(
-                f"File upload {response.status_code}: {detail}", response=response
-            )
-        return response.json()
-
-    def create_record(self, product, doc_type, supplier, filename, file_data):
-        """
-        Create a new record in the SmartSuite Documents table,
-        including the file attachment.
+        Includes the document field as an empty list to satisfy the
+        required-field constraint. The actual file is attached afterward
+        via the recordfiles endpoint.
 
         Returns the record ID on success, or raises an exception on failure.
         """
@@ -96,7 +76,7 @@ class SmartSuiteClient:
             self.field_ids["type"]: doc_type,
             self.field_ids["supplier"]: supplier,
             self.field_ids["filename"]: filename,
-            self.field_ids["document"]: [file_data],
+            self.field_ids["document"]: [],
         }
 
         response = requests.post(url, json=payload, headers=self._headers(), timeout=30)
@@ -109,20 +89,48 @@ class SmartSuiteClient:
         data = response.json()
         return data.get("id")
 
+    def upload_file(self, record_id, file_path, file_name):
+        """
+        Upload a file to an existing SmartSuite record using the
+        recordfiles endpoint.
+
+        Endpoint: POST /api/v1/recordfiles/{table_id}/{record_id}/{field_slug}/
+        Body: multipart/form-data with 'files' and 'filename' fields.
+        """
+        field_slug = self.field_ids["document"]
+        upload_url = (
+            f"{self.BASE_URL}/recordfiles/{self.table_id}/{record_id}/{field_slug}/"
+        )
+        with open(file_path, "rb") as f:
+            files = {"files": (file_name, f, "application/pdf")}
+            data = {"filename": file_name}
+            response = requests.post(
+                upload_url,
+                files=files,
+                data=data,
+                headers=self._file_headers(),
+                timeout=120,
+            )
+        if not response.ok:
+            detail = response.text[:500]
+            raise requests.HTTPError(
+                f"File upload {response.status_code}: {detail}", response=response
+            )
+        return response.json()
+
     def submit_document(self, product, doc_type, supplier, filename, file_path):
         """
-        Full intake submission: upload the PDF, then create the record
-        with all fields including the file attachment.
+        Full intake submission: create the record, then upload the PDF
+        via the recordfiles endpoint.
 
         Returns dict with record_id and file info on success.
         Raises requests.HTTPError on API failure.
         """
+        record_id = self.create_record(product, doc_type, supplier, filename)
+
         safe_name = filename if filename.lower().endswith(".pdf") else f"{filename}.pdf"
-
-        file_info = self.upload_file(file_path=file_path, file_name=safe_name)
-
-        record_id = self.create_record(
-            product, doc_type, supplier, filename, file_data=file_info
+        file_info = self.upload_file(
+            record_id=record_id, file_path=file_path, file_name=safe_name
         )
 
         return {
