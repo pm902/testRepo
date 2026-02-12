@@ -44,6 +44,7 @@ The SmartSuite field IDs must be configured in `.env` or discovered via the Smar
 - All fields are required — no submission without complete metadata.
 - If SmartSuite API fails, the error is displayed to the user with a clear message.
 - ACCURACY IS PARAMOUNT: no data is guessed or assumed. Every field must be explicitly provided by the user.
+- **SmartSuite document field is required on record creation.** The file must be uploaded first (POST /files/) to get a file reference, then the record is created with the file reference included in the payload. The original two-step approach (create record → patch with file) fails because the document field is marked required in SmartSuite.
 
 ## Running
 ```bash
